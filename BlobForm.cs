@@ -12,7 +12,7 @@ namespace ChatGPTYapping {
 
         System.Windows.Forms.Timer timer = new( ) { Interval = 16, Enabled = true };
         readonly Pen pen = new Pen( new SolidBrush( Color.Black ) );
-        (float, float, float) vars = (1f, 2f, 3f);
+
         List<Polygons> Polygons = new( );
         public BlobForm( ) {
             InitializeComponent( );
@@ -36,6 +36,7 @@ namespace ChatGPTYapping {
 
             for ( int i = 0; i < Polygons.Count; i++ ) {
                 Polygons[ i ].GetPolygonPath( random.Value, segments.Value );
+                Polygons[ i ].tolarence = tolarence.Value;
                 for ( int j = 0; j < Polygons.Count; j++ ) {
 
                     if ( i == j )
@@ -90,8 +91,8 @@ namespace ChatGPTYapping {
                         var calculatedPoint1 = new PointF( p1[ i ].X - adjustX, p1[ i ].Y - adjustY );
                         var calculatedPoint2 = new PointF( p2[ j ].X + adjustX, p2[ j ].Y + adjustY );
 
-                        if ( CalculateDistance( calculatedPoint1, (PointF)poly2.center ).ToVector2().Length() 
-                            > CalculateDistance( p1[ i ], ( PointF )poly2.center ).ToVector2().Length() ) {
+                        if ( CalculateDistance( calculatedPoint1, ( PointF )poly2.center ).ToVector2( ).Length( )
+                            > CalculateDistance( p1[ i ], ( PointF )poly2.center ).ToVector2( ).Length( ) ) {
 
                             // Move p1[i] away from p2[j]
                             p1[ i ] = new PointF( p1[ i ].X - adjustX, p1[ i ].Y - adjustY );
@@ -111,10 +112,12 @@ namespace ChatGPTYapping {
     public class Polygons {
 
         public List<PointF> points = new( );
+        public PointF[ ] backupPoints;
         public Point center = Point.Empty;
         public int segments = 0;
         public float x = 0;
         public float y = 0;
+        public int tolarence = 0;
 
         public Polygons( Point center, float x, float y, int segments ) {
 
@@ -135,15 +138,16 @@ namespace ChatGPTYapping {
 
             for ( float rotation = 0; rotation < ( Math.PI * 2.0 ); rotation += flStep ) {
                 PointF something = new PointF(
-                    ( float )( x * Math.Sin( rotation ) + center.X + Math.Cos( random ) * ( x / 10f ) ),
-                    ( float )( y * Math.Cos( rotation ) + center.Y + Math.Cos( random ) * ( y / 10f ) ) );
+                    ( float )( ( x - tolarence * 0.1 ) * Math.Sin( rotation ) + center.X + Math.Cos( random ) * ( x / 10f ) ),
+                    ( float )( ( y - tolarence * 0.1 ) * Math.Cos( rotation ) + center.Y + Math.Cos( random ) * ( y / 10f ) ) );
 
                 pointsList.Add( something );
                 random += 0.2f;
             }
             pointsList[ 0 ] = pointsList.Last( );
-                
+
             points = pointsList;
+            backupPoints = points.ToArray( );
         }
 
         public void FixDistances( ) {
@@ -151,10 +155,10 @@ namespace ChatGPTYapping {
             for ( int i = 0; i < points.Count; i++ ) {
 
                 var vectorFromMiddle = BlobForm.CalculateDistance( points[ i ], ( PointF )center );
-                var vectorFromEdge = BlobForm.CalculateDistance( points[ i ], new PointF(center.X + x + 10, center.Y + y + 10) );
-                if ( vectorFromMiddle.ToVector2().Length() > vectorFromEdge.ToVector2().Length() ) {
+                var vectorFromEdge = BlobForm.CalculateDistance( points[ i ], new PointF( backupPoints[ i ].X - tolarence, backupPoints[ i ].Y - tolarence ) );
+                if ( vectorFromMiddle.ToVector2( ).Length( ) > vectorFromEdge.ToVector2( ).Length( ) ) {
 
-                    points.RemoveAt( i );
+                    //points.RemoveAt( i );
                 }
             }
         }
